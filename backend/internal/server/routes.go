@@ -1,0 +1,88 @@
+package server
+
+import (
+	"log/slog"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	"github.com/rx3lixir/laba_zis/internal/auth"
+	"github.com/rx3lixir/laba_zis/internal/room"
+	"github.com/rx3lixir/laba_zis/internal/user"
+	"github.com/rx3lixir/laba_zis/internal/voice"
+	"github.com/rx3lixir/laba_zis/internal/websocket"
+)
+
+type RouterConfig struct {
+	UserHandler  *user.Handler
+	RoomHandler  *room.Handler
+	VoiceHandler *voice.Handler
+	WsHandler    *websocket.Handler
+	Log          *slog.Logger
+	AuthService  *auth.Service
+}
+
+func NewRouter(config RouterConfig) *chi.Mux {
+	r := chi.NewRouter()
+
+	// Global middleware
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Compress(5))
+
+	// CORS middleware
+	r.Use(cors.Handler(
+		cors.Options{
+			AllowedOrigins: []string{
+				"http://localhost:3000",
+				"https://localhost:3000",
+			},
+			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders: []string{
+				"Origin",
+				"Content-Type",
+				"Accept",
+				"Upgrade",    // Important for WebSocket handshake
+				"Connection", // Important for WebSocket handshake
+				"Sec-Websocket-Key",
+				"Sec-Websocket-Version",
+				"Sec-Websocket-Protocol", // If you use subprotocols
+			},
+			ExposedHeaders:   []string{"Link"},
+			AllowCredentials: true,
+			MaxAge:           300,
+		}))
+
+	r.Route("/api", func(r chi.Router) {
+		// Public auth routes
+		r.Route("/auth", func(r chi.Router) {
+			config.UserHandler.RegisterAuthRoutes(r)
+		})
+
+		// Chat rooms logic routes
+		r.Route("/rooms", func(r chi.Router) {
+			r.Use(auth.Middleware(config.AuthService))
+			config.RoomHandler.RegisterRoutes(r)
+		})
+
+		// Voice messages logic routes
+		r.Route("/messages", func(r chi.Router) {
+			r.Use(auth.Middleware(config.AuthService))
+			config.VoiceHandler.RegisterRoutes(r)
+		})
+
+		// User logic routes
+		r.Route("/user", func(r chi.Router) {
+			r.Use(auth.Middleware(config.AuthService))
+			config.UserHandler.RegisterUserRoutes(r)
+		})
+
+		// Websocket connections
+		r.Route("/ws", func(r chi.Router) {
+			config.WsHandler.RegisterRoutes(r)
+		})
+	})
+
+	return r
+}
