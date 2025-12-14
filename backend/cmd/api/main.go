@@ -22,18 +22,13 @@ import (
 
 func main() {
 	// Creating and validating config
-	cm, err := config.NewConfigManager("internal/config/config.yaml")
+	cm, err := config.NewConfigManager()
 	if err != nil {
 		fmt.Printf("error getting config file: %v", err)
 		os.Exit(1)
 	}
 
 	c := cm.GetConfig()
-
-	if err := c.Validate(); err != nil {
-		fmt.Printf("invalid configuration: %v", err)
-		os.Exit(1)
-	}
 
 	// Logger initializaion
 	log := logger.New(logger.Config{
@@ -45,16 +40,16 @@ func main() {
 		"configuration loaded",
 		"env", c.GeneralParams.Env,
 		"http_server_address", c.HttpServerParams.GetAddress(),
-		"database", c.MainDBParams.Name,
+		"database", c.DatabaseParams.Name,
 	)
 
 	// Initializing Postgres connections pool
-	pool, err := postgres.NewPool(context.Background(), c.MainDBParams.GetDSN())
+	pool, err := postgres.NewPool(context.Background(), c.DatabaseParams.GetDSN())
 	if err != nil {
 		log.Error(
 			"failed to create postgres pool",
 			"error", err,
-			"db", c.MainDBParams.Name,
+			"db", c.DatabaseParams.Name,
 		)
 		os.Exit(1)
 	}
@@ -62,7 +57,7 @@ func main() {
 
 	log.Info(
 		"database connection established",
-		"db", c.MainDBParams.GetDSN(),
+		"db", c.DatabaseParams.GetDSN(),
 	)
 
 	// Creating S3 storage
@@ -102,7 +97,7 @@ func main() {
 	wsManager := websocket.NewConnectionManager(log)
 
 	// Converting database timeout from config to actual time
-	dbTimeout := time.Duration(c.MainDBParams.Timeout) * time.Second
+	dbTimeout := time.Duration(c.DatabaseParams.Timeout) * time.Second
 
 	// Create Handlers
 	roomHandler := room.NewHandler(roomStore, log, dbTimeout)
