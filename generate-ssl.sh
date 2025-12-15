@@ -11,7 +11,7 @@ mkdir -p nginx/ssl
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout nginx/ssl/key.pem \
   -out nginx/ssl/cert.pem \
-  -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+  -subj "/C=US/ST=State/L=City/O=Organization/CN=10.42.0.1"
 
 # Set proper permissions
 chmod 600 nginx/ssl/key.pem
