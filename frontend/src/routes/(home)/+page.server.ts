@@ -2,6 +2,7 @@ import { redirect, fail } from "@sveltejs/kit";
 
 import type { PageServerLoad } from "../(auth)/signin/$types";
 import type { Actions } from "@sveltejs/kit";
+import { API, APIHelpers } from "$lib/server/api";
 
 const log = {
   info: (message: string, data?: any) => {
@@ -26,8 +27,10 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
   try {
     log.debug("Fetching user rooms");
 
+    const getUserRoomsUrl = API.getUserRooms;
+
     // Fetch all rooms the user is part of
-    const roomsResponse = await fetch("/api/rooms", {
+    const roomsResponse = await fetch(getUserRoomsUrl, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${locals.accessToken}`,
@@ -115,8 +118,10 @@ export const actions = {
     try {
       log.debug("Fetching user by email", { email: participantEmail });
 
+      const getUserByEmailUrl = APIHelpers.getUserByEmail(participantEmail);
+
       // Getting user by provided email
-      const userResponse = await fetch(`/api/user/email/${participantEmail}`, {
+      const userResponse = await fetch(getUserByEmailUrl, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${locals.accessToken}`,
@@ -164,8 +169,10 @@ export const actions = {
         currentUserID: locals.user.id,
       });
 
+      const createRoomUrl = API.createRoom;
+
       // Making create room request passing id from response
-      const createRoomResponse = await fetch(`/api/rooms`, {
+      const createRoomResponse = await fetch(createRoomUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,4 +1,5 @@
 // src/hooks.server.ts
+import { API } from "$lib/server/api";
 import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 
@@ -11,8 +12,6 @@ const log = {
     console.error(`[AUTH HOOK ERROR] ${msg}`, err || ""),
 };
 
-const BACKEND_URL = "http://localhost:8080";
-
 const handleAuth: Handle = async ({ event, resolve }) => {
   const accessToken = event.cookies.get("accessToken");
   const refreshToken = event.cookies.get("refreshToken");
@@ -21,10 +20,13 @@ const handleAuth: Handle = async ({ event, resolve }) => {
   event.locals.user = null;
   event.locals.accessToken = null;
 
+  const refreshTokenUrl = API.refreshToken;
+  const userMeUrl = API.userMe;
+
   // Fast path: valid access token → validate via /me (most secure)
   if (accessToken) {
     try {
-      const res = await event.fetch(`${BACKEND_URL}/api/user/me`, {
+      const res = await event.fetch(userMeUrl, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -50,7 +52,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
     log.info("No valid access token → attempting refresh");
 
     try {
-      const res = await event.fetch(`${BACKEND_URL}/api/auth/refresh`, {
+      const res = await event.fetch(refreshTokenUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refreshToken }),
@@ -85,7 +87,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
       }
 
       // Now validate the new access token properly
-      const meRes = await event.fetch(`${BACKEND_URL}/api/user/me`, {
+      const meRes = await event.fetch(userMeUrl, {
         headers: { Authorization: `Bearer ${data.access_token}` },
       });
 

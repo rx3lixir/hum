@@ -5,18 +5,19 @@ services:
   postgres:
     image: postgres:18-alpine
     container_name: laba_postgres
+    env_file: .env
     environment:
-      POSTGRES_USER: laba_admin
-      POSTGRES_PASSWORD: 12345
-      POSTGRES_DB: laba_main_db
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - laba_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U laba_admin -d laba_main_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,13 +27,13 @@ services:
     image: minio/minio:latest
     container_name: laba_minio
     command: server /data --console-address ":9001"
+    env_file: .env
     environment:
-      MINIO_ROOT_USER: laba_admin
-      MINIO_ROOT_PASSWORD: 12345678
-      MINIO_KMS_SECRET_KEY: "primary:OMK583/GzeLi+7UcVhA9N8bMnmU9aIq0msw6IEDeKcY="
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
     ports:
-      - "9000:9000" # API
-      - "9001:9001" # Web Console
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     networks:
@@ -46,15 +47,14 @@ services:
   # Backend Go API
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: laba_backend
+    container_name: hum_backend
+    env_file: .env
     environment:
-      # Override config via environment variables (optional)
-      APP_HTTP_SERVER_PARAMS_HTTP_SERVER_ADDRESS: "0.0.0.0"
-      APP_HTTP_SERVER_PARAMS_HTTP_SERVER_PORT: "8080"
-      APP_MAIN_DB_PARAMS_DB_HOST: "postgres"
-      APP_S3_PARAMS_ENDPOINT: "minio:9000"
+      # Override for Docker network
+      DB_HOST: postgres
+      S3_ENDPOINT: minio:9000
     expose:
       - "8080"
     depends_on:
@@ -66,14 +66,14 @@ services:
       - laba_network
     restart: unless-stopped
 
-  # Frontend SvelteKit
+  # Frontend SvelteKit with Bun
   frontend:
     build:
-      context: ./laba-zis-frontend
+      context: ./frontend
       dockerfile: Dockerfile
-    container_name: laba_frontend
+    container_name: hum_frontend
     environment:
-      ORIGIN: "https://localhost"
+      ORIGIN: "https://192.168.0.102"
     expose:
       - "3000"
     depends_on:
@@ -87,8 +87,8 @@ services:
     image: nginx:alpine
     container_name: laba_nginx
     ports:
-      - "443:443" # HTTPS
-      - "80:80" # HTTP (redirects to HTTPS)
+      - "443:443"
+      - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro

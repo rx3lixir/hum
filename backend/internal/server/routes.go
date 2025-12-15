@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	"github.com/rx3lixir/laba_zis/internal/auth"
 	"github.com/rx3lixir/laba_zis/internal/room"
 	"github.com/rx3lixir/laba_zis/internal/user"
@@ -30,29 +29,6 @@ func NewRouter(config RouterConfig) *chi.Mux {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(5))
-
-	// CORS middleware
-	r.Use(cors.Handler(
-		cors.Options{
-			AllowedOrigins: []string{
-				"http://localhost:3000",
-				"https://localhost:3000",
-			},
-			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowedHeaders: []string{
-				"Origin",
-				"Content-Type",
-				"Accept",
-				"Upgrade",    // Important for WebSocket handshake
-				"Connection", // Important for WebSocket handshake
-				"Sec-Websocket-Key",
-				"Sec-Websocket-Version",
-				"Sec-Websocket-Protocol", // If you use subprotocols
-			},
-			ExposedHeaders:   []string{"Link"},
-			AllowCredentials: true,
-			MaxAge:           300,
-		}))
 
 	r.Route("/api", func(r chi.Router) {
 		// Public auth routes

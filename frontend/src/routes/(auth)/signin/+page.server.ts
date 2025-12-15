@@ -1,6 +1,7 @@
 import type { Actions } from "@sveltejs/kit";
 import { fail, redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
+import { API } from "$lib/server/api";
 
 const log = {
   info: (message: string, data?: any) => {
@@ -46,7 +47,9 @@ export const actions = {
     try {
       log.debug("Sending signin request to backend");
 
-      const response = await fetch("/api/auth/signin", {
+      const signinurl = API.signin;
+
+      const response = await fetch(signinurl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

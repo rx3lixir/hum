@@ -2,6 +2,7 @@ import { redirect, fail } from "@sveltejs/kit";
 
 import type { Actions } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
+import { API } from "$lib/server/api";
 
 const log = {
   info: (message: string, data?: any) => {
@@ -53,7 +54,9 @@ export const actions = {
     try {
       log.debug("Sending signup request to backend");
 
-      const response = await fetch("/api/auth/signup", {
+      const signupurl = API.signup;
+
+      const response = await fetch(signupurl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

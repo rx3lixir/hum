@@ -1,5 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
+import { APIHelpers } from "$lib/server/api";
 
 const log = {
   info: (message: string, data?: any) => {
@@ -27,7 +28,9 @@ export const load: PageServerLoad = async ({ params, locals, fetch }) => {
   try {
     log.debug("Fetching room details from backend");
 
-    const roomResponse = await fetch(`/api/rooms/${roomID}`, {
+    const roomDetailsUrl = APIHelpers.getRoomById(roomID);
+
+    const roomResponse = await fetch(roomDetailsUrl, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${locals.accessToken}`,
