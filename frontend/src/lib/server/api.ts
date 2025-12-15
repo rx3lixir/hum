@@ -1,4 +1,7 @@
-const baseUrl = "/api";
+const isServer = typeof window === "undefined";
+const internalApiUrl = process.env.INTERNAL_API_URL || "http://backend:8080";
+
+const baseUrl = isServer ? `${internalApiUrl}/api` : "/api";
 
 export const API = {
   base: baseUrl,

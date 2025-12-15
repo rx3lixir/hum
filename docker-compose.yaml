@@ -74,6 +74,7 @@ services:
     container_name: hum_frontend
     environment:
       ORIGIN: "https://192.168.0.102"
+      INTERNAL_API_URL: "http://backend:8080"
     expose:
       - "3000"
     depends_on:
