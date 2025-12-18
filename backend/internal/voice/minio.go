@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -101,7 +102,15 @@ func (m *MinIOVoiceStore) GetPresignedURL(ctx context.Context, objectName string
 	if err != nil {
 		return "", fmt.Errorf("failed to generate presigned url: %w", err)
 	}
-	return url.String(), nil
+
+	// TEMPORARY FIX
+	urlStr := url.String()
+
+	externalHost := "10.42.0.1"
+
+	urlStr = strings.Replace(urlStr, "http://minio:9000/", fmt.Sprintf("https://%s/minio-api/", externalHost), 1)
+
+	return urlStr, nil
 }
 
 // GetObjectInfo retrieves metadata about a stored object

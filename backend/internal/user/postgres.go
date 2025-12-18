@@ -49,7 +49,6 @@ func (s *PostgresStore) CreateUser(ctx context.Context, user *User) error {
 	return nil
 }
 
-// GetUserByID retrieves a user with passed ID from Postgres
 func (s *PostgresStore) GetUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	query := `
 		SELECT id, username, email, password, created_at, updated_at
